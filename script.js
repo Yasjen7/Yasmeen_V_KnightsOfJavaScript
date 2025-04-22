@@ -17,6 +17,7 @@ function changePlayer() {
         let playerTwoHealthNum = Number(playerTwoHealth.innerHTML);
         // reduces by 10
         playerTwoHealthNum -= 10;
+        playerTwoHealthNum = Math.max(0, playerTwoHealthNum);
         // resets the HTML to the new value
         playerTwoHealth.innerHTML = playerTwoHealthNum;
 
@@ -35,6 +36,29 @@ function changePlayer() {
             let playerName = document.getElementById("playerName");
             playerName.innerHTML = `Player ${gameState.whoseTurn}`;
         }
+         } else if (gameState.whoseTurn === 2) {
+             let playerOneHealth = document.getElementById("playerOneHealth");
+             let playerOneHealthNum = Number(playerOneHealth.innerHTML);
+             playerOneHealthNum -= 10;
+             playerOneHealthNum = Math.max(0, playerOneHealthNum);
+             playerOneHealth.innerHTML = playerOneHealthNum;
+
+         // checks if the player has reached 0 health
+         if (playerOneHealthNum <= 0) {
+            // ensures health does not dig into the negative
+            playerOneHealth = 0;
+            // ends the game
+            playerOneHealth.innerHTML = playerOneHealthNum
+            gameOver();
+        }
+        else {
+            // switch to the next player and change the UI's display / behavior
+            gameState.whoseTurn = 1;
+
+            // grabs the 'playerName' element and changes the player's turn display
+            let playerName = document.getElementById("playerName");
+            playerName.innerHTML = `Player ${gameState.whoseTurn}`;
+        }
     }
 }
 
@@ -43,6 +67,7 @@ function changePlayer() {
 function gameOver() {
     let title = document.getElementById("title");
     title.style = "display: none;";
+
     let playerTurnDisplay = document.getElementById("playerTurn");
     playerTurnDisplay.style = "display: none;";
 
@@ -51,29 +76,51 @@ function gameOver() {
 
     let gameOverScreen = document.getElementById("gameOverScreen");
     gameOverScreen.style = "display: flex; flex-direction: column;";
+
+    gameState.gameOver = true;
 }
 
-// function that allows the player two attack button to reduce the player two's
-// health
-function attackPlayerTwo() {
-    // compartmentalized function that will switch the player 2 attack button to inactive
-    // and player 1 attack button to active using DOM manipulation
-    // this also DISABLES the button, meaning they are not interactable
-    function changeButtonStatus() {
-        let playerTwoAttackButton = document.getElementById("playerTwoAttack");
-        playerTwoAttackButton.disabled = true;
-        playerTwoAttackButton.classList.add("inactive");
-        playerTwoAttackButton.classList.remove("active");
 
-        let playerOneAttackButton = document.getElementById("playerOneAttack");
-        playerOneAttackButton.disabled = false;
-        playerOneAttackButton.classList.add("active");
-        playerOneAttackButton.classList.remove("inactive");
+let playerOneAttackButton = document.getElementById("playerOneAttack");
+let playerTwoAttackButton = document.getElementById("playerTwoAttack");
+
+if (gameState.whoseTurn === 1) {
+    playerOneAttackButton.disabled = false;
+    playerOneAttackButton.classList.add("active");
+    playerOneAttackButton.classList.remove("inactive");
+
+    playerTwoAttackButton.disabled = true;
+    playerTwoAttackButton.classList.add("inactive");
+    playerTwoAttackButton.classList.remove("active");
+} else {
+    playerTwoAttackButton.disabled = false;
+    playerTwoAttackButton.classList.add("active");
+    playerTwoAttackButton.classList.remove("inactive");
+
+    playerOneAttackButton.disabled = true;
+    playerOneAttackButton.classList.add("inactive");
+    playerOneAttackButton.classList.remove("active");
+}
+
+    // function that allows the player one attack button to reduce the player two's
+// health
+function attackPlayerOne() {
+    if (gameState.whoseTurn === 2 && !gameState.gameOver) {
+        animatePlayerTwo();
+        changePlayer();
     }
+}
+
+function attackPlayerTwo() {
+    if (gameState.whoseTurn === 1 && !gameState.gameOver) {
+        animatePlayerOne();
+        changePlayer();
+    }
+}
 
     // commpartmentalized function that changes the player 1's sprite using the array
     // containing multiple images
-    function animatePlayer() {
+    function animatePlayerOne() {
         // an array containing the images using in player one's animation
         // the indices are later used to cycle / "animate" when the player attacks
         let playerOneFrames = [
@@ -108,17 +155,40 @@ function attackPlayerTwo() {
         // the function we will call in the setTimeOut method below
         // after 350 milliseconds
         // this function will execute this block of code
-        function changePlayerOneSprite() {
+        setTimeout(() => {
             enemySprite.classList.remove("damage");
             enemySprite.classList.add("idle");
 
             playerSprite.src = playerOneFrames[0];
             playerSprite.classList.remove("attack");
             playerSprite.classList.add("idle");
-        }
-
-        setTimeout(changePlayerOneSprite, 350);
+        }, 350);
     }
+
+    function animatePlayerTwo() {
+        let playerTwoFrames = ["./images/L_Idle.png", "./images/L_Attack.png"];
+        let playerSprite = document.getElementById("playerTwoSprite");
+        let enemySprite = document.getElementById("playerOneSprite");
+        let enemyDamage = document.getElementById("SFX_PlayerDamage");
+    
+        playerSprite.src = playerTwoFrames[1];
+        playerSprite.classList.remove("idle");
+        playerSprite.classList.add("attack");
+    
+        enemySprite.classList.remove("idle");
+        enemySprite.classList.add("damage");
+        enemyDamage.play();
+
+        setTimeout(() => {
+            enemySprite.classList.remove("damage");
+            enemySprite.classList.add("idle");
+
+            playerSprite.src = playerTwoFrames[0];
+            playerSprite.classList.remove("attack");
+            playerSprite.classList.add("idle");
+        }, 350);
+    }
+
 
     // for easy reading,
     // we do not include ALL of the above code within this condition
@@ -128,7 +198,7 @@ function attackPlayerTwo() {
         changeButtonStatus();
         changePlayer();
     }
-}
+
 
 function attackPlayerOne() {
     if (gameState.whoseTurn === 2) {
@@ -139,6 +209,22 @@ function attackPlayerOne() {
 
         if (playerOneHealth <= 0) {
             playerOneHealth = 0;
+            gameOver();
+        } else {
+            changePlayer();
+        }
+    }
+}
+
+function attackPlayerTwo() {
+    if (gameState.whoseTurn === 2) {
+        let playerTwoHealth = document.getElementById("playerTwoHealth");
+        let playerTwoHealthNum = Number(playerTwoHealth.innerHTML);
+        playerTwoHealthNum -= 10;
+        playerTwoHealth.innerHTML = playerTwoHealthNum;
+
+        if (playerTwoHealth <= 0) {
+            playerTwoHealth = 0;
             gameOver();
         } else {
             changePlayer();
